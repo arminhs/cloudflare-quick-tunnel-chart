@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tunnel-chart.fullname" . }}
+  labels:
+    {{- include "tunnel-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "tunnel-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tunnel-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - cloudflared
+            - tunnel
+          env:
+            - name: TUNNEL_URL
+              value: "{{ .Values.tunnel.url }}"
+            - name: NO_TLS_VERIFY
+              value: "true"
+            - name: NO_AUTOUPDATE
+              value: "true"
+
+{{ toYaml .Values.resources | indent 10 }}
